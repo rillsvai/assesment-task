@@ -1,90 +1,100 @@
 import { deepStrictEqual } from "assert";
-
 function findShortestPath(grid, start, end) {
+  if (!Array.isArray(grid)) {
+    return null;
+  }
+
   const rows = grid.length;
-  if (rows === 0) return null;
+  if (rows === 0) {
+    return null;
+  }
+
   const cols = grid[0].length;
+  if (cols === 0) {
+    return null;
+  }
 
   const [startX, startY] = start;
   const [endX, endY] = end;
 
   if (
     startX < 0 ||
-    startX >= rows ||
     startY < 0 ||
+    startX >= rows ||
     startY >= cols ||
-    grid[startX][startY] !== 0
-  ) {
-    return null;
-  }
-  if (
     endX < 0 ||
-    endX >= rows ||
     endY < 0 ||
+    endX >= rows ||
     endY >= cols ||
+    grid[startX][startY] !== 0 ||
     grid[endX][endY] !== 0
   ) {
     return null;
   }
 
-  if (startX === endX && startY === endY) {
-    return { path: [[startX, startY]], steps: 0 };
-  }
-
   const directions = [
-    [-1, 0],
     [1, 0],
+    [-1, 0],
     [0, -1],
     [0, 1],
   ];
+  const queue = [];
 
-  const queue = [[startX, startY]];
-  const visited = Array.from({ length: rows }, () =>
+  const visitedNodes = Array.from({ length: rows }, () =>
     new Array(cols).fill(false)
   );
-  visited[startX][startY] = true;
+  const parent = Array.from({ length: rows }, () =>
+    new Array(cols).fill(undefined)
+  );
 
-  const parent = Array.from({ length: rows }, () => new Array(cols).fill(null));
+  visitedNodes[startX][startY] = true;
+
+  queue.push(start);
 
   let found = false;
-
-  while (queue.length > 0) {
+  while (queue.length) {
     const [x, y] = queue.shift();
-
     if (x === endX && y === endY) {
       found = true;
       break;
     }
 
-    for (const [dx, dy] of directions) {
-      const nextX = x + dx;
-      const nextY = y + dy;
+    for (const [dirX, dirY] of directions) {
+      const nextX = x + dirX;
+      const nextY = y + dirY;
 
-      if (nextX >= 0 && nextX < rows && nextY >= 0 && nextY < cols) {
-        if (!visited[nextX][nextY] && grid[nextX][nextY] === 0) {
-          visited[nextX][nextY] = true;
-          parent[nextX][nextY] = [x, y];
-          queue.push([nextX, nextY]);
-        }
+      if (
+        nextX < rows &&
+        nextY < cols &&
+        nextX >= 0 &&
+        nextY >= 0 &&
+        !visitedNodes[nextX][nextY] &&
+        grid[nextX][nextY] === 0
+      ) {
+        visitedNodes[nextX][nextY] = true;
+        queue.push([nextX, nextY]);
+        parent[nextX][nextY] = [x, y];
       }
     }
   }
 
-  if (!found) return null;
-
-  const path = [];
-  let current = [endX, endY];
-  while (current[0] !== startX || current[1] !== startY) {
-    path.push(current);
-    const [px, py] = parent[current[0]][current[1]];
-    current = [px, py];
+  if (!found) {
+    return null;
   }
+
+  const path = new Array();
+  let [x, y] = end;
+
+  while (x !== startX || y !== startY) {
+    path.push([x, y]);
+    const [parentX, parentY] = parent[x][y];
+    x = parentX;
+    y = parentY;
+  }
+
   path.push([startX, startY]);
-  path.reverse();
 
-  const steps = path.length - 1;
-
-  return { path: path, steps: steps };
+  return { path: path.reverse(), steps: path.length - 1 };
 }
 
 const testCases = [
